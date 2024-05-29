@@ -8,23 +8,19 @@ module parameters
     ! E [J]: 10^-16 -> 1
 
     ! 実験パラメータ
+    integer, parameter :: u_Pt_N = 384 ! 上部Pt分子数
+    integer, parameter :: l_Pt_N = 384 ! 下部Pt分子数
+    integer, parameter :: Ar_N = 1024   ! Ar分子数
     double precision, parameter :: u_Pt_atemp = 50.0D0 ! 上部Pt目標温度[K]
-    double precision, parameter :: l_Pt_atemp = 50.0D0 ! 下部Pt目標温度[K]
-    double precision, parameter :: Ar_atemp = 200.0D0 ! Ar目標温度[K]
+    double precision, parameter :: l_Pt_atemp = 200.0D0 ! 下部Pt目標温度[K]
+    double precision, parameter :: Ar_atemp = 100.0D0 ! Ar目標温度[K]
     double precision, parameter :: cutoff = 3.000D0 ! カットオフ長さ/σ
     double precision, parameter :: dt = 5.00D0 ! 無次元時間ステップ(無次元)
     integer, parameter :: maxstep = 20000 ! 最大ステップ数
-    integer, parameter :: stpstep = 10000 ! 温度補正を止めるステップ
-
-    ! 分子数
-    integer, parameter :: u_Pt_N = 256 ! 上部Pt分子数
-    integer, parameter :: l_Pt_N = 256 ! 下部Pt分子数
-    integer, parameter :: Ar_N = 512   ! Ar分子数
+    integer, parameter :: stpstep = 5000 ! 温度補正を止めるステップ
 
     ! スケール
-    double precision, parameter :: ssize(3) = [double precision :: 64.0D0, 64.0D0, 128.0D0] ! 系の大きさ
-    double precision, parameter :: u_Pt_thickness = 16.0D0 ! 上部Pt層厚み
-    double precision, parameter :: l_Pt_thickness = 16.0D0 ! 下部Pt層厚み
+    double precision, parameter :: ssize(3) = [double precision :: 32.0D0, 32.0D0, 64.0D0] ! 系の大きさ
 
     ! 分子固有定数
     ! double precision, parameter :: Pt_Mmol = 195.084D-3 ! Ptのモル質量[kg/mol]

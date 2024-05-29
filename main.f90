@@ -12,6 +12,11 @@ program main
         open(4,file='velocity.dat')
     ! 系のエネルギーデータの出力
         open(7,file='energy.dat')
+        open(8,file='energy_u_Pt.dat')
+        open(10,file='energy_l_Pt.dat')
+        open(11,file='energy_Ar.dat')
+    ! 系の周期長さの出力
+        open(9,file='period_length.dat')
 
     nowstp = 0
     
@@ -28,12 +33,13 @@ program main
         if (mod(nowstp, 500) == 0) then
             write(6,*) nowstp, "/", maxstep ! ターミナルに進捗を出力
         endif
+        ! NVT一定
         if (nowstp <= stpstep) then
             ! ステップ数が100の倍数のとき
             if (mod(nowstp,100) == 0) then
-                call correct_trspeed ! 系内の全分子の温度の補正
-                call velocity_scaling ! 系内の全分子の温度の補正
-                call correct_cogravity ! 系内の全分子の重心の補正
+                call correct_trspeed ! 並進速度の補正
+                call velocity_scaling ! 速度スケーリング法
+                !call correct_cogravity ! 重心の補正
             endif
         endif
     
@@ -46,4 +52,7 @@ program main
             call record_energy ! データの出力２
         endif
     end do
+
+    call record_finposvel ! データの出力３
+
 end program main

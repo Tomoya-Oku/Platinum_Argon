@@ -7,29 +7,29 @@ subroutine correct_trspeed
     double precision, dimension(3) :: Ar_trv = 0.00000D0
     integer :: i
 
-    do i = 1, u_Pt_N
-        u_Pt_trv(:) = u_Pt_trv(:) + u_Pt_vel(i,:)
-    end do
+    ! do i = 1, u_Pt_N
+    !     u_Pt_trv(:) = u_Pt_trv(:) + u_Pt_vel(i,:)
+    ! end do
 
-    do i = 1, l_Pt_N
-        l_Pt_trv(:) = l_Pt_trv(:) + l_Pt_vel(i,:)
-    end do
+    ! do i = 1, l_Pt_N
+    !     l_Pt_trv(:) = l_Pt_trv(:) + l_Pt_vel(i,:)
+    ! end do
 
     do i = 1, Ar_N
         Ar_trv(:) = Ar_trv(:) + Ar_vel(i,:)
     end do
 
-    u_Pt_trv(:) = u_Pt_trv(:) / u_Pt_N
-    l_Pt_trv(:) = l_Pt_trv(:) / l_Pt_N
+    ! u_Pt_trv(:) = u_Pt_trv(:) / u_Pt_N
+    ! l_Pt_trv(:) = l_Pt_trv(:) / l_Pt_N
     Ar_trv(:) = Ar_trv(:) / Ar_N
 
-    do i = 1, u_Pt_N
-        u_Pt_vel(i,:) = u_Pt_vel(i,:) - u_Pt_trv(:)
-    end do
+    ! do i = 1, u_Pt_N
+    !     u_Pt_vel(i,:) = u_Pt_vel(i,:) - u_Pt_trv(:)
+    ! end do
 
-    do i = 1, l_Pt_N
-        l_Pt_vel(i,:) = l_Pt_vel(i,:) - l_Pt_trv(:)
-    end do
+    ! do i = 1, l_Pt_N
+    !     l_Pt_vel(i,:) = l_Pt_vel(i,:) - l_Pt_trv(:)
+    ! end do
 
     do i = 1, Ar_N
         Ar_vel(i,:) = Ar_vel(i,:) - Ar_trv(:)
@@ -93,28 +93,25 @@ subroutine correct_cogravity
     cms(:) = ssize(:) / 2.0D0
     tcms(:) = 0.0000D0
 
-    do i = 1, u_Pt_N
-        tcms(:) = tcms(:) + u_Pt_pos(i,:)
-    end do
-
-    do i = 1, l_Pt_N
-        tcms(:) = tcms(:) + l_Pt_pos(i,:)
-    end do
-
+    ! do i = 1, u_Pt_N
+    !     tcms(:) = tcms(:) + u_Pt_pos(i,:)
+    ! end do
+    ! do i = 1, l_Pt_N
+    !     tcms(:) = tcms(:) + l_Pt_pos(i,:)
+    ! end do
     do i = 1, Ar_N
         tcms(:) = tcms(:) + Ar_pos(i,:)
     end do
 
-    tcms(:) = cms(:) - tcms(:) / dble(u_Pt_N+l_Pt_N+Ar_N)
+    ! tcms(:) = cms(:) - tcms(:) / dble(u_Pt_N+l_Pt_N+Ar_N)
+    tcms(:) = cms(:) - tcms(:) / dble(Ar_N)
    
-    do i = 1, u_Pt_N
-        u_Pt_pos(i,:) = u_Pt_pos(i,:) + tcms(:)
-    end do
-
-    do i = 1, l_Pt_N
-        l_Pt_pos(i,:) = l_Pt_pos(i,:) + tcms(:)
-    end do
-
+    ! do i = 1, u_Pt_N
+    !     u_Pt_pos(i,:) = u_Pt_pos(i,:) + tcms(:)
+    ! end do
+    ! do i = 1, l_Pt_N
+    !     l_Pt_pos(i,:) = l_Pt_pos(i,:) + tcms(:)
+    ! end do
     do i = 1, Ar_N
         Ar_pos(i,:) = Ar_pos(i,:) + tcms(:)
     end do
