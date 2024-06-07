@@ -5,39 +5,46 @@ program main
     integer :: i
 
     ! 読み込み用乱数ファイル
-        open(1,file='random1.dat')
-        open(2,file='random0.dat')
-        open(3,file='posit.dat')
+        open(DAT_RANDOM1, file='random1.dat')
+        open(DAT_RANDOM0, file='random0.dat')
+        open(DAT_POSIT, file='posit.dat')
     ! 各分子の速度データの出力
-        open(4,file='velocity.dat')
+        open(DAT_VELOCITY, file='velocity.dat')
     ! 系のエネルギーデータの出力
-        open(7,file='energy.dat')
-        open(8,file='energy_u_Pt.dat')
-        open(10,file='energy_l_Pt.dat')
-        open(11,file='energy_Ar.dat')
+        open(DAT_ENERGY, file='energy.dat')
     ! 系の周期長さの出力
-        open(9,file='period_length.dat')
+        open(DAT_PERIODIC, file='periodic.dat')
+    ! 系の温度
+        open(DAT_TEMP, file='temperature.dat')
+    ! ログ
+        open(DAT_LOG, file='log.dat')
+    ! 加速度データ
+        open(DAT_ACCELERATION, file='acceleration.dat')
 
     nowstp = 0
     
     call initialize ! 各分子の初期位置，初期速度などの設定
-    call correct_trspeed ! 系内の全分子の並進速度の補正
+    !call record_header ! ヘッダーを書き込み
+    !call correct_trvelocity ! 系内の全分子の並進速度の補正
     call velocity_scaling ! 速度スケーリング法
-    call correct_cogravity ! 系内の全分子の重心の補正
-    call record_posvel ! データの出力１
-    call record_energy ! データの出力２
+    !call correct_cogravity ! 系内の全分子の重心の補正
+    call calc_bound
+    call record_posvel
+    call record_energy
 
-    do i = 1, maxstep
+    write(6,*) "STDIST_Pt, STDIST_Ar", STDIST_Pt, STDIST_Ar
+
+    do i = 1, MAXSTEP
         nowstp = i
         ! ステップ数が500の倍数のとき
         if (mod(nowstp, 500) == 0) then
-            write(6,*) nowstp, "/", maxstep ! ターミナルに進捗を出力
+            write(6,*) nowstp, "/", MAXSTEP ! ターミナルに進捗を出力
         endif
         ! NVT一定
-        if (nowstp <= stpstep) then
+        if (nowstp <= NVTSTEP) then
             ! ステップ数が100の倍数のとき
             if (mod(nowstp,100) == 0) then
-                call correct_trspeed ! 並進速度の補正
+                !call correct_trvelocity ! 並進速度の補正
                 call velocity_scaling ! 速度スケーリング法
                 !call correct_cogravity ! 重心の補正
             endif
@@ -48,11 +55,11 @@ program main
         
         ! ステップ数が100の倍数+1のとき
         if(mod(nowstp, 100) == 1) then
-            call record_posvel ! データの出力１
-            call record_energy ! データの出力２
+            call record_posvel
+            call record_energy
         endif
     end do
 
-    call record_finposvel ! データの出力３
+    call record_finposvel
 
 end program main

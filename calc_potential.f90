@@ -2,267 +2,70 @@ subroutine calc_potential
     use variables
     use parameters
     implicit none
-    integer :: i1, i2, j
-    double precision :: dist, ppp, force
-    double precision :: dit2, dit4, dit6, dit8, dit12, dit14
-    double precision, dimension(3) :: divs, forces
+    integer :: i1, i2, j, kind1, kind2
+    double precision :: r, LJ_potential, force
+    double precision :: div2, div4, div6, div8, div12, div14
+    double precision :: divs(3), for(3)
 
     ! 初期化
-    u_Pt_for(:,:) = 0.0000D0
-    u_Pt_pot(:) = 0.0000D0
-    l_Pt_for(:,:) = 0.0000D0
-    l_Pt_pot(:) = 0.0000D0
-    Ar_for(:,:) = 0.0000D0
-    Ar_pot(:) = 0.0000D0
+    acc(:, :, :) = 0.0000D0
+    pot(:, :) = 0.0000D0
 
-    ! 上部Ptが受ける力
-    do i1 = 1, u_Pt_N
-        ! 上部Ptが上部Ptから受ける力
-        ! LP1:do i2 = i1+1, u_Pt_N
-        !         divs(:) = u_Pt_pos(i1, :) - u_Pt_pos(i2, :)
+    do kind1 = 1, 3
+        do kind2 = kind1, 3
+            if (kind1 == U_PT .and. kind2 == L_PT) cycle ! 上部Ptと下部Ptの計算をスキップ
+            do i1 = 1, N(kind1)
+                LP: do i2 = 1, N(kind2)
+                        !! 同じ粒子
+                        if ((kind1 == kind2) .and. (i1 == i2)) cycle LP
 
-        !         if (all(divs == 0)) write(6,*) "div=0!", "u_Pt_pos(", i1, ")", "u_Pt_pos(", i2, ")"
+                        ! 相対位置ベクトル
+                        divs(:) = pos(kind1, i1, :) - pos(kind2, i2, :)
 
-        !         do j = 1,3
-        !             if (divs(j) < -Pt_Pt_cutoff(j)) then
-        !                 divs(j) = divs(j) + syul(j)
-        !             else if(divs(j) > Pt_Pt_cutoff(j)) then
-        !                 divs(j) = divs(j) - syul(j)
-        !             endif
-        !         end do
+                        ! 相対位置ベクトルが零ベクトルになる場合
+                        if (divs(1) == 0.0D0 .and. divs(2) == 0.0D0 .and. divs(3) == 0.0D0) then
+                            write(6,*) "! divs(:) = 0.0 !"
+                            write(6,*) "Program will stop."
+                        endif
 
-        !         do j = 1,3
-        !             divs(j) = divs(j) / Pt_Pt_sig
-        !             if (divs(j) > cutoff) cycle LP1
-        !             if (divs(j) < -cutoff) cycle LP1
-        !         end do
+                        ! xy周期境界条件の適用
+                        do j = 1, 2
+                            if (divs(j) < -CUTOFF(kind1, kind2, j)) then
+                                divs(j) = divs(j) + ssize(j)
+                            else if (divs(j) > CUTOFF(kind1, kind2, j)) then
+                                divs(j) = divs(j) - ssize(j)
+                            endif
+                        end do
 
-        !         dit2 = divs(1)*divs(1) + divs(2)*divs(2) + divs(3)*divs(3)
-        !         dist = dsqrt(dit2)
-        !         if (dist > cutoff) cycle
+                        ! カットオフ
+                        do j = 1, 3
+                            divs(j) = divs(j) / SIG(kind1, kind2)
+                            if (abs(divs(j)) > CUTOFFperSIG) cycle LP
+                        end do
 
-        !         dit4 = dit2*dit2
-        !         dit6 = dit4*dit2
-        !         dit8 = dit4*dit4
-        !         dit12 = dit6*dit6
-        !         dit14 = dit8*dit6
+                        div2 = divs(1)*divs(1) + divs(2)*divs(2) + divs(3)*divs(3)
+                        r = dsqrt(div2)
 
-        !         ppp = 4.00D0*Pt_Pt_eps*(1.00D0/dit12-1.00D0/dit6)
-        !         force = Pt_Pt_cforce*(-2.00D0/dit14+1.00D0/dit8)
+                        ! カットオフ
+                        if (r > CUTOFFperSIG) cycle LP
 
-        !         forces(:) = -force * divs(:) / Pt_M
-        !         u_Pt_for(i1, :) = u_Pt_for(i1, :) + forces(:)
-        !         u_Pt_for(i2, :) = u_Pt_for(i2, :) - forces(:)
+                        div4 = div2*div2
+                        div6 = div4*div2
+                        div8 = div4*div4
+                        div12 = div6*div6
+                        div14 = div8*div6
 
-        !         u_Pt_pot(i1) = u_Pt_pot(i1) + ppp*0.500D0
-        !         u_Pt_pot(i2) = u_Pt_pot(i2) + ppp*0.500D0
-        !     end do LP1
-        ! 上部Ptが下部Ptから受ける力 -> 計算負荷軽減のためカット
-        ! LP2:do i2 = 1, l_Pt_N
-        !         divs(:) = u_Pt_pos(i1, :) - l_Pt_pos(i2, :)
+                        LJ_potential = 4.00D0*EPS(kind1, kind2)*(1.00D0/div12 - 1.00D0/div6)
+                        force = COEF(kind1, kind2)*(-2.00D0/div14 + 1.00D0/div8)
+                        for(:) = -force * divs(:)
 
-        !         do j = 1,3
-        !             if (divs(j) < -Pt_Pt_cutoff(j)) then
-        !                 divs(j) = divs(j) + syul(j)
-        !             else if(divs(j) > Pt_Pt_cutoff(j)) then
-        !                 divs(j) = divs(j) - syul(j)
-        !             endif
-        !         end do
+                        acc(kind1, i1, :) = acc(kind1, i1, :) + for(:) / MASS(kind1)
+                        acc(kind2, i2, :) = acc(kind2, i2, :) - for(:) / MASS(kind2)
 
-        !         do j = 1,3
-        !             divs(j) = divs(j) / Pt_Pt_sig
-        !             if (divs(j) > cutoff) cycle LP2
-        !             if (divs(j) < -cutoff) cycle LP2
-        !         end do
-
-        !         dit2 = divs(1)*divs(1) + divs(2)*divs(2) + divs(3)*divs(3)
-        !         dist = dsqrt(dit2)
-        !         if (dist > cutoff) cycle
-
-        !         dit4 = dit2*dit2
-        !         dit6 = dit4*dit2
-        !         dit8 = dit4*dit4
-        !         dit12 = dit6*dit6
-        !         dit14 = dit8*dit6
-
-        !         ppp = 4.00D0*Pt_Pt_eps*(1.00D0/dit12-1.00D0/dit6)
-        !         force = Pt_Pt_cforce*(-2.00D0/dit14+1.00D0/dit8)
-
-        !         forces(:) = -force * divs(:) / Pt_M
-        !         u_Pt_for(i1, :) = u_Pt_for(i1, :) + forces(:)
-        !         l_Pt_for(i2, :) = l_Pt_for(i2, :) - forces(:)
-
-        !         u_Pt_pot(i1) = u_Pt_pot(i1) + ppp*0.500D0
-        !         l_Pt_pot(i2) = l_Pt_pot(i2) + ppp*0.500D0
-        !     end do LP2
-
-        ! 上部PtがArから受ける力
-        LP3:do i2 = 1, Ar_N
-                divs(:) = u_Pt_pos(i1, :) - Ar_pos(i2, :)
-
-                if (all(divs == 0)) write(6,*) "div=0!", "u_Pt_pos(", i1, ")", "Ar_pos(", i2, ")"
-
-                do j = 1,3
-                    if (divs(j) < -Pt_Ar_cutoff(j)) then
-                        divs(j) = divs(j) + syul(j)
-                    else if(divs(j) > Pt_Ar_cutoff(j)) then
-                        divs(j) = divs(j) - syul(j)
-                    endif
-                end do
-
-                do j = 1,3
-                    divs(j) = divs(j) / Pt_Ar_sig
-                    if (divs(j) > cutoff) cycle LP3
-                    if (divs(j) < -cutoff) cycle LP3
-                end do
-
-                dit2 = divs(1)*divs(1) + divs(2)*divs(2) + divs(3)*divs(3)
-                dist = dsqrt(dit2)
-                if (dist > cutoff) cycle
-
-                dit4 = dit2*dit2
-                dit6 = dit4*dit2
-                dit8 = dit4*dit4
-                dit12 = dit6*dit6
-                dit14 = dit8*dit6
-
-                ppp = 4.00D0*Pt_Ar_eps*(1.00D0/dit12-1.00D0/dit6)
-                force = Pt_Ar_cforce*(-2.00D0/dit14+1.00D0/dit8)
-
-                forces(:) = -force * divs(:)
-                u_Pt_for(i1, :) = u_Pt_for(i1, :) + forces(:) / Pt_M
-                Ar_for(i2, :) = Ar_for(i2, :) - forces(:) / Ar_M
-
-                u_Pt_pot(i1) = u_Pt_pot(i1) + ppp*0.500D0
-                Ar_pot(i2) = Ar_pot(i2) + ppp*0.500D0
-            end do LP3
-    end do
-
-    ! 下部Ptが受ける力
-    do i1 = 1, l_Pt_N
-        ! 下部Ptが下部Ptから受ける力
-        ! LP4:do i2 = i1+1, l_Pt_N
-        !         divs(:) = l_Pt_pos(i1, :) - l_Pt_pos(i2, :)
-
-        !         if (all(divs == 0)) write(6,*) "div=0!", "l_Pt_pos(", i1, ")", "l_Pt_pos(", i2, ")"
-
-        !         do j = 1,3
-        !             if (divs(j) < -Pt_Pt_cutoff(j)) then
-        !                 divs(j) = divs(j) + syul(j)
-        !             else if(divs(j) > Pt_Pt_cutoff(j)) then
-        !                 divs(j) = divs(j) - syul(j)
-        !             endif
-        !         end do
-
-        !         do j = 1,3
-        !             divs(j) = divs(j) / Pt_Pt_sig
-        !             if (divs(j) > cutoff) cycle LP4
-        !             if (divs(j) < -cutoff) cycle LP4
-        !         end do
-
-        !         dit2 = divs(1)*divs(1) + divs(2)*divs(2) + divs(3)*divs(3)
-        !         dist = dsqrt(dit2)
-        !         if (dist > cutoff) cycle
-
-        !         dit4 = dit2*dit2
-        !         dit6 = dit4*dit2
-        !         dit8 = dit4*dit4
-        !         dit12 = dit6*dit6
-        !         dit14 = dit8*dit6
-
-        !         ppp = 4.00D0*Pt_Pt_eps*(1.00D0/dit12-1.00D0/dit6)
-        !         force = Pt_Pt_cforce*(-2.00D0/dit14+1.00D0/dit8)
-
-        !         forces(:) = -force * divs(:) / Pt_M
-        !         l_Pt_for(i1, :) = l_Pt_for(i1, :) + forces(:)
-        !         l_Pt_for(i2, :) = l_Pt_for(i2, :) - forces(:)
-
-        !         l_Pt_pot(i1) = l_Pt_pot(i1) + ppp*0.500D0
-        !         l_Pt_pot(i2) = l_Pt_pot(i2) + ppp*0.500D0
-        !     end do LP4
-        ! 下部PtがArから受ける力
-        LP5:do i2 = 1, Ar_N
-                divs(:) = l_Pt_pos(i1, :) - Ar_pos(i2, :)
-
-                if (all(divs == 0)) write(6,*) "div=0!", "l_Pt_pos(", i1, ")", "Ar_pos(", i2, ")"
-
-                do j = 1,3
-                    if (divs(j) < -Pt_Ar_cutoff(j)) then
-                        divs(j) = divs(j) + syul(j)
-                    else if(divs(j) > Pt_Ar_cutoff(j)) then
-                        divs(j) = divs(j) - syul(j)
-                    endif
-                end do
-
-                do j = 1,3
-                    divs(j) = divs(j) / Pt_Ar_sig
-                    if (divs(j) > cutoff) cycle LP5
-                    if (divs(j) < -cutoff) cycle LP5
-                end do
-
-                dit2 = divs(1)*divs(1) + divs(2)*divs(2) + divs(3)*divs(3)
-                dist = dsqrt(dit2)
-                if (dist > cutoff) cycle
-
-                dit4 = dit2*dit2
-                dit6 = dit4*dit2
-                dit8 = dit4*dit4
-                dit12 = dit6*dit6
-                dit14 = dit8*dit6
-
-                ppp = 4.00D0*Pt_Ar_eps*(1.00D0/dit12-1.00D0/dit6)
-                force = Pt_Ar_cforce*(-2.00D0/dit14+1.00D0/dit8)
-
-                forces(:) = -force * divs(:)
-                l_Pt_for(i1, :) = l_Pt_for(i1, :) + forces(:) / Pt_M
-                Ar_for(i2, :) = Ar_for(i2, :) - forces(:) / Ar_M
-
-                l_Pt_pot(i1) = l_Pt_pot(i1) + ppp*0.500D0
-                Ar_pot(i2) = Ar_pot(i2) + ppp*0.500D0
-            end do LP5
-    end do
-
-    ! Arが受ける力
-    do i1 = 1, Ar_N
-        ! ArがArから受ける力
-        LP6:do i2 = i1+1, Ar_N
-                divs(:) = Ar_pos(i1, :) - Ar_pos(i2, :)
-
-                if (all(divs == 0)) write(6,*) "div=0!", "Ar_pos(", i1, ")", "Ar_pos(", i2, ")"
-
-                do j = 1,3
-                    if (divs(j) < -Ar_Ar_cutoff(j)) then
-                        divs(j) = divs(j) + syul(j)
-                    else if(divs(j) > Ar_Ar_cutoff(j)) then
-                        divs(j) = divs(j) - syul(j)
-                    endif
-                end do
-
-                do j = 1,3
-                    divs(j) = divs(j) / Ar_Ar_sig
-                    if (divs(j) > cutoff) cycle LP6
-                    if (divs(j) < -cutoff) cycle LP6
-                end do
-
-                dit2 = divs(1)*divs(1) + divs(2)*divs(2) + divs(3)*divs(3)
-                dist = dsqrt(dit2)
-                if (dist > cutoff) cycle
-
-                dit4 = dit2*dit2
-                dit6 = dit4*dit2
-                dit8 = dit4*dit4
-                dit12 = dit6*dit6
-                dit14 = dit8*dit6
-
-                ppp = 4.00D0*Ar_Ar_eps*(1.00D0/dit12-1.00D0/dit6)
-                force = Ar_Ar_cforce*(-2.00D0/dit14+1.00D0/dit8)
-
-                forces(:) = -force * divs(:)
-                Ar_for(i1, :) = Ar_for(i1, :) + forces(:) / Ar_M
-                Ar_for(i2, :) = Ar_for(i2, :) - forces(:) / Ar_M
-
-                Ar_pot(i1) = Ar_pot(i1) + ppp*0.500D0
-                Ar_pot(i2) = Ar_pot(i2) + ppp*0.500D0
-            end do LP6
+                        pot(kind1, i1) = pot(kind1, i1) + LJ_potential*0.500D0
+                        pot(kind2, i2) = pot(kind2, i2) + LJ_potential*0.500D0
+                    end do LP
+            end do
+        end do
     end do
 end subroutine calc_potential

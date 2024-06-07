@@ -1,41 +1,41 @@
-subroutine correct_trspeed
+! 並進速度の補正
+subroutine correct_trvelocity
     use variables
     use parameters
     implicit none
-    double precision, dimension(3) :: u_Pt_trv = 0.00000D0
-    double precision, dimension(3) :: l_Pt_trv = 0.00000D0
-    double precision, dimension(3) :: Ar_trv = 0.00000D0
-    integer :: i
+    double precision, dimension(3) :: trvel = 0.00000D0
 
-    ! do i = 1, u_Pt_N
-    !     u_Pt_trv(:) = u_Pt_trv(:) + u_Pt_vel(i,:)
-    ! end do
+    trvel(1) = sum(vel(AR, :, 1))
+    trvel(2) = sum(vel(AR, :, 2))
+    trvel(3) = sum(vel(AR, :, 3))
 
-    ! do i = 1, l_Pt_N
-    !     l_Pt_trv(:) = l_Pt_trv(:) + l_Pt_vel(i,:)
-    ! end do
+    trvel(:) = trvel(:) / N(AR)
 
-    do i = 1, Ar_N
-        Ar_trv(:) = Ar_trv(:) + Ar_vel(i,:)
-    end do
+    vel(AR, :, 1) = vel(AR, :, 1) - trvel(1)
+    vel(AR, :, 2) = vel(AR, :, 2) - trvel(2)
+    vel(AR, :, 3) = vel(AR, :, 3) - trvel(3)
+end subroutine correct_trvelocity
 
-    ! u_Pt_trv(:) = u_Pt_trv(:) / u_Pt_N
-    ! l_Pt_trv(:) = l_Pt_trv(:) / l_Pt_N
-    Ar_trv(:) = Ar_trv(:) / Ar_N
+! 重心の補正
+subroutine correct_cogravity
+    use variables
+    use parameters
+    implicit none
+    double precision, dimension(3) :: cms = 0.0000D0, tcms = 0.0000D0
 
-    ! do i = 1, u_Pt_N
-    !     u_Pt_vel(i,:) = u_Pt_vel(i,:) - u_Pt_trv(:)
-    ! end do
+    cms(:) = SSIZE(:) / 2.0D0
 
-    ! do i = 1, l_Pt_N
-    !     l_Pt_vel(i,:) = l_Pt_vel(i,:) - l_Pt_trv(:)
-    ! end do
+    tcms(X) = sum(pos(AR, :, X))
+    tcms(Y) = sum(pos(AR, :, Y))
+    tcms(Z) = sum(pos(AR, :, Z))
 
-    do i = 1, Ar_N
-        Ar_vel(i,:) = Ar_vel(i,:) - Ar_trv(:)
-    end do
+    tcms(:) = cms(:) - tcms(:) / N(AR)
+   
+    pos(AR, :, X) = pos(AR, :, X) + tcms(X)
+    pos(AR, :, Y) = pos(AR, :, Y) + tcms(Y)
+    pos(AR, :, Z) = pos(AR, :, Z) + tcms(Z)
 
-end subroutine correct_trspeed
+end subroutine correct_cogravity
 
 ! 速度スケーリング法
 subroutine velocity_scaling
@@ -45,75 +45,15 @@ subroutine velocity_scaling
     double precision :: vel2, vel2_sum, vel2_mean, baiss
     integer :: i
 
-    ! 上部Pt
-    vel2_sum = 0.00D0
-    do i = 1, u_Pt_N
-        vel2 = u_Pt_vel(i,1)*u_Pt_vel(i,1) + u_Pt_vel(i,2)*u_Pt_vel(i,2) + u_Pt_vel(i,3)*u_Pt_vel(i,3)
+    vel2_sum = 0.00D0 ! すべての分子の速度の2乗和
+    do i = 1, N(AR)
+        vel2 = vel(AR, i, 1)*vel(AR, i, 1) + vel(AR, i, 2)*vel(AR, i, 2) + vel(AR, i, 3)*vel(AR, i, 3)
         vel2_sum = vel2_sum + vel2
     end do
-    vel2_mean = vel2_sum / dble(u_Pt_N) / 1.000D+16 ! 後のために有次元化
-    baiss = dsqrt(3.00D0 * BOLTZMANN * u_Pt_atemp / Pt_M / vel2_mean)
-    do i = 1, u_Pt_N
-        u_Pt_vel(i, :) = u_Pt_vel(i, :) * baiss
-    end do
-
-    ! 下部Pt
-    vel2_sum = 0.00D0
-    do i = 1, l_Pt_N
-        vel2 = l_Pt_vel(i,1)*l_Pt_vel(i,1) + l_Pt_vel(i,2)*l_Pt_vel(i,2) + l_Pt_vel(i,3)*l_Pt_vel(i,3)
-        vel2_sum = vel2_sum + vel2
-    end do
-    vel2_mean = vel2_sum / dble(l_Pt_N) / 1.000D+16 ! 後のために有次元化
-    baiss = dsqrt(3.00D0 * BOLTZMANN * l_Pt_atemp / Pt_M / vel2_mean)
-    do i = 1, l_Pt_N
-        l_Pt_vel(i, :) = l_Pt_vel(i, :) * baiss
-    end do
-
-    ! Ar
-    vel2_sum = 0.00D0
-    do i = 1, Ar_N
-        vel2 = Ar_vel(i,1)*Ar_vel(i,1) + Ar_vel(i,2)*Ar_vel(i,2) + Ar_vel(i,3)*Ar_vel(i,3)
-        vel2_sum = vel2_sum + vel2
-    end do
-    vel2_mean = vel2_sum / dble(Ar_N) / 1.000D+16 ! 後のために有次元化
-    baiss = dsqrt(3.00D0 * BOLTZMANN * Ar_atemp / Ar_M / vel2_mean)
-    do i = 1, Ar_N
-        Ar_vel(i, :) = Ar_vel(i, :) * baiss
+    vel2_mean = vel2_sum / dble(N(AR)) / 1.000D+16 ! 速度2乗の平均・後のために有次元化
+    baiss = dsqrt(3.00D0 * BOLTZMANN * ATEMP_AR / MASS(AR) / vel2_mean)
+    do i = 1, N(AR)
+        vel(AR, i, :) = vel(AR, i, :) * baiss
     end do
 
 end subroutine velocity_scaling
-
-subroutine correct_cogravity
-    use variables
-    use parameters
-    implicit none
-    double precision, dimension(3) :: cms, tcms
-    integer :: i
-
-    cms(:) = ssize(:) / 2.0D0
-    tcms(:) = 0.0000D0
-
-    ! do i = 1, u_Pt_N
-    !     tcms(:) = tcms(:) + u_Pt_pos(i,:)
-    ! end do
-    ! do i = 1, l_Pt_N
-    !     tcms(:) = tcms(:) + l_Pt_pos(i,:)
-    ! end do
-    do i = 1, Ar_N
-        tcms(:) = tcms(:) + Ar_pos(i,:)
-    end do
-
-    ! tcms(:) = cms(:) - tcms(:) / dble(u_Pt_N+l_Pt_N+Ar_N)
-    tcms(:) = cms(:) - tcms(:) / dble(Ar_N)
-   
-    ! do i = 1, u_Pt_N
-    !     u_Pt_pos(i,:) = u_Pt_pos(i,:) + tcms(:)
-    ! end do
-    ! do i = 1, l_Pt_N
-    !     l_Pt_pos(i,:) = l_Pt_pos(i,:) + tcms(:)
-    ! end do
-    do i = 1, Ar_N
-        Ar_pos(i,:) = Ar_pos(i,:) + tcms(:)
-    end do
-
-end subroutine correct_cogravity

@@ -8,7 +8,6 @@ program pvch
       integer :: num1, i, j
       !dimension  mcolor(nkoss)
       integer :: moltype = 1
-      integer :: nmol = u_Pt_N + l_Pt_N + Ar_N
       ! manual change
       integer :: ndat= 200
       integer :: ntime0 = 0
@@ -19,33 +18,33 @@ program pvch
       integer :: orange = 10 ! オレンジ
       integer :: blue = 0 ! 青
 
-      open(1,file='posit.dat')
-      open(2,file='pos.dat')
-      open(3,file='mask.dat')
-      open(4,file='period_length.dat')
+      open(DAT_POSIT,file='posit.dat')
+      open(DAT_POS,file='pos.dat')
+      open(DAT_MASK,file='mask.dat')
+      open(DAT_PERIODIC,file='periodic.dat')
 
       do i=1,3
-            read(4,*) vl2(i)
+            read(DAT_PERIODIC,*) vl2(i)
       end do
       
-      write(2,'(3I7)') moltype,nmol,ndat
-      write(2,'(3F15.5)') vl2(1),vl2(2),vl2(3)
-      write(2,'(2I7)') ntime0, ndt
+      write(DAT_POS,'(3I7)') moltype,N(ALL),ndat
+      write(DAT_POS,'(3F15.5)') vl2(1),vl2(2),vl2(3)
+      write(DAT_POS,'(2I7)') ntime0, ndt
 
       do i = 1, ndat
-            do j = 1, nmol
-                  read(1,'(I6,3D15.7)')num1, pon(1), pon(2), pon(3)
+            do j = 1, N(ALL)
+                  read(DAT_POSIT,'(I6,3D15.7)')num1, pon(1), pon(2), pon(3)
                   pom(:) = pon(:)
-                  write(2,'(3E15.7)') pom(1), pom(2), pom(3)
+                  write(DAT_POS,'(3E15.7)') pom(1), pom(2), pom(3)
             end do
       end do
 
       do i = 1, ndat
-            do j = 1, u_Pt_N+l_Pt_N
-                  write(3,'(I7)') blue
+            do j = 1, N(U_PT)+N(L_PT)
+                  write(DAT_MASK,'(I7)') blue
             end do
-            do j = u_Pt_N+l_Pt_N+1, u_Pt_N+l_Pt_N+Ar_N
-                  write(3,'(I7)') red
+            do j = N(U_PT)+N(L_PT)+1, N(ALL)
+                  write(DAT_MASK,'(I7)') red
             end do
       end do
 end program pvch
