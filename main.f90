@@ -11,15 +11,18 @@ program main
     ! 各分子の速度データの出力
         open(DAT_VELOCITY, file='velocity.dat')
     ! 系のエネルギーデータの出力
-        open(DAT_ENERGY, file='energy.dat')
+        open(DAT_ENERGY_AR, file='energy_Ar.dat')
+        open(DAT_ENERGY_TOTAL, file='energy_Total.dat')
     ! 系の周期長さの出力
         open(DAT_PERIODIC, file='periodic.dat')
     ! 系の温度
         open(DAT_TEMP, file='temperature.dat')
     ! ログ
-        open(DAT_LOG, file='log.dat')
+    !   open(DAT_LOG, file='log.dat')
     ! 加速度データ
-        open(DAT_ACCELERATION, file='acceleration.dat')
+    !   open(DAT_ACCELERATION, file='acceleration.dat')
+    ! Langevin層温度
+        open(DAT_TEMP_INTERFACE, file='temp_interface.dat')
 
     nowstp = 0
     
@@ -32,6 +35,8 @@ program main
     call record_posvel
     call record_energy
 
+    write(6,*) "MAXSTEP, NVTSTEP, DT", MAXSTEP, NVTSTEP, DT
+    write(6,*) "N_Ar", N_Ar
     write(6,*) "STDIST_Pt, STDIST_Ar", STDIST_Pt, STDIST_Ar
 
     do i = 1, MAXSTEP

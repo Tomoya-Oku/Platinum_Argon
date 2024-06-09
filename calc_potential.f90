@@ -25,7 +25,10 @@ subroutine calc_potential
                         ! 相対位置ベクトルが零ベクトルになる場合
                         if (divs(1) == 0.0D0 .and. divs(2) == 0.0D0 .and. divs(3) == 0.0D0) then
                             write(6,*) "! divs(:) = 0.0 !"
+                            write(6,*) "kind1, kind2: ", kind1, kind2
+                            write(6,*) "i1, i2: ", i1, i2
                             write(6,*) "Program will stop."
+                            stop
                         endif
 
                         ! xy周期境界条件の適用
@@ -55,7 +58,7 @@ subroutine calc_potential
                         div12 = div6*div6
                         div14 = div8*div6
 
-                        LJ_potential = 4.00D0*EPS(kind1, kind2)*(1.00D0/div12 - 1.00D0/div6)
+                        LJ_potential = 4.00D0*ALPHA(kind1, kind2)*EPS(kind1, kind2)*(1.00D0/div12 - 1.00D0/div6)
                         force = COEF(kind1, kind2)*(-2.00D0/div14 + 1.00D0/div8)
                         for(:) = -force * divs(:)
 

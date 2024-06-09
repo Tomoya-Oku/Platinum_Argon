@@ -3,7 +3,7 @@ subroutine initialize
     use parameters
     implicit none
     integer :: num = 0, i, j, k, kind
-    double precision :: ran, alpha, beta, cr = 1.00D-6
+    double precision :: ran, r1, r2, cr = 1.00D-6
     double precision, dimension(3) :: init_xyz
     double precision :: ofst(3) = [2.0D0, 2.0D0, ssize(3) - 2 * 2]
     double precision, dimension(3) :: v
@@ -21,14 +21,14 @@ subroutine initialize
                 case (L_PT)
                     init_xyz(Z) = dble(k-1)*2.0D0
                 case (AR)
-                    init_xyz(Z) = SSIZE(Z)/2 + dble(k-1)*2.0D0
+                    init_xyz(Z) = (SSIZE(Z) - 2.0*(xyz(AR,Z)-1)) / 2 + dble(k-1)*2.0D0
             end select
             do i=1, xyz(kind, X) ! x
                 select case (kind)
                     case (U_PT, L_PT)
                         init_xyz(X) = ofst(X) + dble(i-1)*STDIST_Pt/2.0D0
                     case (AR)
-                        init_xyz(X) = SSIZE(X)/2 + dble(i-1)*2.0D0
+                        init_xyz(X) = dble(i-1)*2.0D0
                 end select
                 do j=1, xyz(kind, Y) ! y
                     select case (kind)
@@ -42,9 +42,9 @@ subroutine initialize
                         case (AR)
                             ! iとkの偶奇が一致する
                             if(mod(k,2) == mod(i,2)) then
-                                init_xyz(Y) = SSIZE(Y)/2 + dble(j-1)*STDIST_Ar
+                                init_xyz(Y) = dble(j-1)*STDIST_Ar
                             else
-                                init_xyz(Y) = SSIZE(Y)/2 + dble(j-1)*STDIST_Ar + STDIST_Ar/2.0D0
+                                init_xyz(Y) = dble(j-1)*STDIST_Ar + STDIST_Ar/2.0D0
                             endif
                     end select
                     num = num + 1
@@ -59,12 +59,12 @@ subroutine initialize
     ! Arに初期速度を与える
     do i=1, N(AR)
         read(DAT_RANDOM1,*)ran
-        alpha = PI*ran
+        r1 = PI*ran
         read(DAT_RANDOM0,*)ran
-        beta = 2.000D0*PI*ran
-        v(1) = dsin(alpha)*dcos(beta)*cr
-        v(2) = dsin(alpha)*dsin(beta)*cr
-        v(3) = dcos(alpha)*cr
+        r2 = 2.000D0*PI*ran
+        v(1) = dsin(r1)*dcos(r2)*cr
+        v(2) = dsin(r1)*dsin(r2)*cr
+        v(3) = dcos(r1)*cr
         vel(AR, i, :) = v(:)
     end do
 

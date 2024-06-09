@@ -22,10 +22,15 @@ module parameters
     ! T [s]: 10^-15 -> 1
     ! E [J]: 10^-16 -> 1
 
+    ! 不変定数
+    double precision, parameter :: AVOGADRO = 6.022D+23 ! Avogadro数
+    double precision, parameter :: BOLTZMANN = 1.3806662D-23 ! Boltzmann定数
+    double precision, parameter :: PI = 3.141592654D0 ! 円周率
+
     ! 実験パラメータ
     integer, parameter :: xyz_uP(3) = [integer :: 16, 8, 3]
     integer, parameter :: xyz_lP(3) = [integer :: 16, 8, 3]
-    integer, parameter :: xyz_Ar(3) = [integer :: 1, 1, 1]
+    integer, parameter :: xyz_Ar(3) = [integer :: 16, 8, 8]
     integer, parameter :: xyz(3, 3) = reshape([ &
        xyz_uP(X), xyz_lP(X), xyz_Ar(X), &
        xyz_uP(Y), xyz_lP(Y), xyz_Ar(Y), &
@@ -40,8 +45,8 @@ module parameters
     integer, parameter :: N(4) = [N_uP, N_lP, N_Ar, N_All]
 
     double precision, parameter :: CUTOFFperSIG = 3.000D0 ! カットオフ長さ/σ
-    double precision, parameter :: DT = 5.00D0 ! 無次元時間ステップ(無次元)
-    integer, parameter :: MAXSTEP = 20000 ! 最大ステップ数
+    double precision, parameter :: DT = 1.00D0 ! 無次元時間ステップ(無次元)
+    integer, parameter :: MAXSTEP = 40000 ! 最大ステップ数
     integer, parameter :: NVTSTEP = 20000 ! 温度補正を止めるステップ
 
     ! 系のスケール
@@ -55,12 +60,19 @@ module parameters
     double precision, parameter :: MASS(3) = [MASS_Pt, MASS_Pt, MASS_Ar]
 
     !! L-Jパラメータ (+Lorentz-Berthelot則)
+    double precision, parameter :: ALPHA_PtPt = 1.0D0 ! Pt-Pt間相互作用強さ
+    double precision, parameter :: ALPHA_PtAr = 0.5D0 ! Pt-Pt間相互作用強さ
+    double precision, parameter :: ALPHA_ArAr = 1.0D0 ! Pt-Pt間相互作用強さ
     double precision, parameter :: SIG_PtPt = 2.475D0  ! Pt-Pt間σ(無次元)
     double precision, parameter :: EPS_PtPt = 83.31D-5 ! Pt-Pt間ε(無次元)
     double precision, parameter :: SIG_PtAr = 2.938D0  ! Pt-Ar間σ(無次元)
     double precision, parameter :: EPS_PtAr = 11.78D-5 ! Pt-Ar間ε(無次元)
     double precision, parameter :: SIG_ArAr = 3.400D0  ! Ar-Ar間σ(無次元)
     double precision, parameter :: EPS_ArAr = 1.666D-5 ! Ar-Ar間ε(無次元)
+    double precision, parameter :: ALPHA(3,3) = reshape([ &
+    ALPHA_PtPt, ALPHA_PtPt, ALPHA_PtAr, &
+    ALPHA_PtPt, ALPHA_PtPt, ALPHA_PtAr, &
+    ALPHA_PtAr, ALPHA_PtAr, ALPHA_ArAr ], shape(ALPHA))
     double precision, parameter :: SIG(3,3) = reshape([ &
     SIG_PtPt, SIG_PtPt, SIG_PtAr, &
     SIG_PtPt, SIG_PtPt, SIG_PtAr, &
@@ -104,29 +116,23 @@ module parameters
     double precision, parameter :: ATEMP_AR = 100.0D0 ! Ar目標温度[K]
 
     ! Langevin法パラメータ
-    double precision, parameter :: GAMMA = 1.0
-    double precision, parameter :: ATEMP_U_PT = 200.0D0 ! 上部Pt目標温度[K]
-    double precision, parameter :: ATEMP_L_PT = 50.00D0 ! 下部Pt目標温度[K]
-    double precision, parameter :: D_H = sqrt(2.0 * gamma * ATEMP_U_PT / DT)
-    double precision, parameter :: D_L = sqrt(2.0 * gamma * ATEMP_L_PT / DT)
-
-    ! 不変定数
-    double precision, parameter :: AVOGADRO = 6.022D+23 ! Avogadro数
-    double precision, parameter :: BOLTZMANN = 1.3806662D-23 ! Boltzmann定数
-    double precision, parameter :: PI = 3.141592654D0 ! 円周率
+    double precision, parameter :: GAMMA = 1.0D0
+    double precision, parameter :: ATEMP(2) = [double precision :: 200.0D0, 50.0D0] ! 目標温度[K]
 
     ! record用
     integer, parameter :: DAT_RANDOM1 = 1
     integer, parameter :: DAT_RANDOM0 = 2
     integer, parameter :: DAT_POSIT = 3
     integer, parameter :: DAT_VELOCITY = 4
-    integer, parameter :: DAT_ENERGY = 7
+    integer, parameter :: DAT_ENERGY_AR = 7
     integer, parameter :: DAT_TEMP = 8
     integer, parameter :: DAT_PERIODIC = 9
     integer, parameter :: DAT_POS = 10
     integer, parameter :: DAT_MASK = 11
     integer, parameter :: DAT_LOG = 12
     integer, parameter :: DAT_ACCELERATION = 13
+    integer, parameter :: DAT_TEMP_INTERFACE = 14
+    integer, parameter :: DAT_ENERGY_TOTAL = 15
 
 end module parameters
 
@@ -155,5 +161,8 @@ module variables
     ! 運動エネルギー(種類，番号)
     ! 種類: 1: 上部Pt，2: 下部Pt，3: Ar
     double precision, dimension(3, N_Max) :: kin
+
+    double precision :: kin_interface(2, xyz_uP(X)*xyz_uP(Y))
+    double precision :: kin_interface_sum(2)
 
 end module variables
