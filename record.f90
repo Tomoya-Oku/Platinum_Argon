@@ -52,43 +52,12 @@ subroutine record_energy
     use parameters
     implicit none
 
-    ! 分子の種類
-    ! total_enegy, total_potential, total_kinetic
-    double precision :: energy(4, 3)
-    ! temperature
-    double precision :: temperature(3), temp_interface(2)
-    integer :: i, kind
+    call calc_energy
 
-    energy(:, :) = 0.00D0
-
-    ! エネルギーの合計計算
-    do kind = 1, 3
-        do i = 1, N(kind)
-            energy(kind, POTENTIAL) = energy(kind, POTENTIAL) + pot(kind, i)
-            energy(kind, KINETIC) = energy(kind, KINETIC) + kin(kind, i)
-        end do
-    end do
-
-    kin_interface_sum(U_PT) = sum(kin_interface(U_PT, :)) / 1.00D16
-    kin_interface_sum(L_PT) = sum(kin_interface(L_PT, :)) / 1.00D16
-
-    ! グループ別全E = グループ別全ポテンシャル + グループ別全運動エネルギー
-    energy(:, TOTAL) = energy(:, POTENTIAL) + energy(:, KINETIC)
-
-    ! 全E = 全ポテンシャル + 全運動エネルギー
-    energy(ALL, :) = energy(U_PT, :) + energy(L_PT, :) + energy(AR, :)
-
-    ! 有次元化
-    energy(:, :)  = energy(:, :) / 1.00D16
-
-    ! 温度計算
-    temperature(:) = 2.0D0 * energy(1:3, KINETIC) / (3.0D0 * dble(N(1:3)) * BOLTZMANN)
-    temp_interface(:) = 2.0D0 * kin_interface_sum(:) / (3.0D0 * dble(N(1:2)) * BOLTZMANN)
-
-    write(DAT_ENERGY_AR, '(3E15.7)') energy(AR, TOTAL), energy(AR, POTENTIAL), energy(AR, KINETIC)
-    write(DAT_ENERGY_TOTAL, '(3E15.7)') energy(ALL, TOTAL), energy(ALL, POTENTIAL), energy(ALL, KINETIC)
-    write(DAT_TEMP, '(3E15.7)') temperature(U_PT), temperature(L_PT), temperature(AR)
+    write(DAT_ENERGY, '(3E15.7)') energy(ALL, TOTAL), energy(ALL, POTENTIAL), energy(ALL, KINETIC)
+    write(DAT_TEMP, '(3E15.7)') temp(U_PT), temp(L_PT), temp(AR)
     write(DAT_TEMP_INTERFACE, '(2E15.7)') temp_interface(U_PT), temp_interface(L_PT)
+    write(DAT_TEMP_PHANTOM, '(2E15.7)') temp_phantom(U_PT), temp_phantom(L_PT)
 
 end subroutine record_energy
 

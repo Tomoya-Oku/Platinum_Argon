@@ -58,7 +58,7 @@ subroutine calc_potential
                         div12 = div6*div6
                         div14 = div8*div6
 
-                        LJ_potential = 4.00D0*ALPHA(kind1, kind2)*EPS(kind1, kind2)*(1.00D0/div12 - 1.00D0/div6)
+                        LJ_potential = 4.00D0*EPS(kind1, kind2)*(1.00D0/div12 - 1.00D0/div6)
                         force = COEF(kind1, kind2)*(-2.00D0/div14 + 1.00D0/div8)
                         for(:) = -force * divs(:)
 

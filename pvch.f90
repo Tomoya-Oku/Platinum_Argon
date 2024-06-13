@@ -19,10 +19,10 @@ program pvch
       integer :: blue = 0 ! 青
       integer :: white = 15 
 
-      open(DAT_POSIT,file='posit.dat')
-      open(DAT_POS,file='pos.dat')
-      open(DAT_MASK,file='mask.dat')
-      open(DAT_PERIODIC,file='periodic.dat')
+      open(DAT_POSIT,file='Data/posit.dat')
+      open(DAT_POS,file='Data/pos.dat')
+      open(DAT_MASK,file='Data/mask.dat')
+      open(DAT_PERIODIC,file='Data/periodic.dat')
 
       do i=1,3
             read(DAT_PERIODIC,*) vl2(i)
