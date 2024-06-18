@@ -14,7 +14,6 @@ def main():
     
     U_Pt_all = temp_all[temp_all.keys()[0]]
     L_Pt_all = temp_all[temp_all.keys()[1]]
-    AR = temp_all[temp_all.keys()[2]]
 
     U_Pt_itf = temp_itf[temp_itf.keys()[0]]
     L_Pt_itf = temp_itf[temp_itf.keys()[1]]
@@ -34,7 +33,6 @@ def main():
 
     plt.plot(time, U_Pt_all, label="Upper Pt(ALL)", color="red")
     plt.plot(time, L_Pt_all, label="Lower Pt(ALL)", color="blue")
-    plt.plot(time, AR, label="Ar", color="green")
 
     plt.plot(time, U_Pt_itf, label="Upper Pt(INTERFACE)", color="red", ls='--')
     plt.plot(time, L_Pt_itf, label="Lower Pt(INTERFACE)", color="blue", ls='--')
@@ -42,7 +40,7 @@ def main():
     plt.plot(time, U_Pt_ptm, label="Upper Pt(PHANTOM)", color="red", ls=':')
     plt.plot(time, L_Pt_ptm, label="Lower Pt(PHANTOM)", color="blue", ls=':')
 
-    plt.legend(loc="best")
+    plt.legend(loc="upper right")
     plt.show()
 
 main()

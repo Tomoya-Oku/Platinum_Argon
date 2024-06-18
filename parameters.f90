@@ -30,7 +30,7 @@ module parameters
     ! 実験パラメータ
     integer, parameter :: xyz_uP(3) = [integer :: 16, 8, 3]
     integer, parameter :: xyz_lP(3) = [integer :: 16, 8, 3]
-    integer, parameter :: xyz_Ar(3) = [integer :: 16, 8, 8]
+    integer, parameter :: xyz_Ar(3) = [integer :: 10, 5, 20]
     integer, parameter :: xyz(3, 3) = reshape([ &
        xyz_uP(X), xyz_lP(X), xyz_Ar(X), &
        xyz_uP(Y), xyz_lP(Y), xyz_Ar(Y), &
@@ -49,11 +49,8 @@ module parameters
 
     double precision, parameter :: CUTOFFperSIG = 3.000D0 ! カットオフ長さ/σ
     double precision, parameter :: DT = 1.00D0 ! 無次元時間ステップ(無次元)
-    integer, parameter :: MAXSTEP = 40000 ! 最大ステップ数
-    integer, parameter :: NVTSTEP = 10000 ! 温度補正を止めるステップ
-
-    ! 系のスケール
-    double precision, parameter :: SSIZE(3) = [double precision :: 32.0D0, 32.0D0, 64.0D0]
+    integer, parameter :: MAXSTEP = 20000 ! 最大ステップ数
+    integer, parameter :: NVTSTEP = 5000 ! 温度補正を止めるステップ
 
     ! 分子固有定数
     ! double precision, parameter :: MOLMASS_Pt = 195.084D-3 ! Ptのモル質量[kg/mol]
@@ -91,9 +88,28 @@ module parameters
     COEF_PtAr, COEF_PtAr, COEF_ArAr ], shape(COEF))
 
     ! 分子間安定距離
-    !double precision, parameter :: STDIST_Pt = 2**(1.0/6.0) * SIG_PtPt
-    double precision, parameter :: STDIST_Pt = 3.5
-    double precision, parameter :: STDIST_Ar = 2**(1.0/6.0) * SIG_ArAr
+    double precision, parameter :: STDIST_Pt = 2.0D0**(2.0D0/3.0D0) * SIG_PtPt
+    double precision, parameter :: STDIST_Ar = 2.0D0**(2.0D0/3.0D0) * SIG_ArAr
+    double precision, parameter :: STDIST(3) = [STDIST_Pt, STDIST_Pt, STDIST_Ar]
+
+    ! 系のスケール
+    double precision, parameter :: SSIZE(3) = [xyz(U_PT, X)*(STDIST_Pt/2), xyz(U_PT, Y)*STDIST_Pt, 64.0D0]
+    double precision, parameter :: ofst_U_Pt_X = (SSIZE(X) - (STDIST_Pt/2) * (xyz(U_PT, X) - 1)) / 2.0D0
+    double precision, parameter :: ofst_U_Pt_Y = (SSIZE(Y) - STDIST_Pt * (xyz(U_PT, Y) - 0.5D0)) / 2.0D0
+    double precision, parameter :: ofst_U_Pt_Z = SSIZE(3) - STDIST(U_PT)
+    double precision, parameter :: ofst_U_Pt(3) = [ofst_U_Pt_X, ofst_U_Pt_Y, ofst_U_Pt_Z]
+    double precision, parameter :: ofst_L_PT_X = (SSIZE(X) - (STDIST_Pt/2) * (xyz(L_PT, X) - 1)) / 2.0D0
+    double precision, parameter :: ofst_L_PT_Y = (SSIZE(Y) - STDIST_Pt * (xyz(L_PT, Y) - 0.5D0)) / 2.0D0
+    double precision, parameter :: ofst_L_PT_Z = 0.0D0
+    double precision, parameter :: ofst_L_PT(3) = [ofst_L_PT_X, ofst_L_PT_Y, ofst_L_PT_Z]
+    double precision, parameter :: ofst_Ar_X = (SSIZE(X) - (STDIST_Ar/2) * (xyz(AR, X) - 1.0D0)) / 2.0D0
+    double precision, parameter :: ofst_Ar_Y = (SSIZE(Y) - STDIST_Ar * (xyz(AR, Y) - 0.5D0)) / 2.0D0
+    double precision, parameter :: ofst_Ar_Z = (SSIZE(Z) - (STDIST_Ar/2) * (xyz(AR, Z) - 1.0D0)) / 2.0D0
+    double precision, parameter :: ofst_Ar(3) = [ofst_Ar_X, ofst_Ar_Y, ofst_Ar_Z]
+    double precision, parameter :: OFST(3,3) = reshape([ &
+    ofst_U_Pt(1), ofst_L_Pt(1), ofst_Ar(1), &
+    ofst_U_Pt(2), ofst_L_Pt(2), ofst_Ar(2), &
+    ofst_U_Pt(3), ofst_L_Pt(3), ofst_Ar(3) ], shape(OFST))
 
     !! ポテンシャルのカットオフ長さx,y,z方向
     double precision, parameter :: CUTOFF_PtPt(3) = SSIZE(:) - CUTOFFperSIG * SIG_PtPt
@@ -115,8 +131,15 @@ module parameters
     double precision, parameter :: ATEMP_AR = 100.0D0 ! Ar目標温度[K]
 
     ! Langevin法パラメータ
-    double precision, parameter :: DAMPER(2) = [double precision :: 100.0D0, 50.0D0]
-    double precision, parameter :: ATEMP(2) = [double precision :: 200.0D0, 50.0D0] ! 目標温度[K]
+    double precision, parameter :: DAMPER(2) = [double precision :: 50.0D0, 50.0D0]
+    double precision, parameter :: ATEMP(2) = [double precision :: 400.0D0, 50.0D0] ! 目標温度[K]
+    double precision, parameter :: DAMPCOEF(2) = [-MASS(U_PT)/DAMPER(U_PT), -MASS(L_PT)/DAMPER(L_PT)]
+    double precision, parameter :: RANDCOEF(2) = [dsqrt(2.0D0 * BOLTZMANN * 1.0D16 * ATEMP(U_PT) * MASS(U_PT) / DT / DAMPER(U_PT)),&
+    dsqrt(2.0D0 * BOLTZMANN * 1.0D16 * ATEMP(L_PT) * MASS(L_PT) / DT / DAMPER(L_PT))]
+
+    ! 熱流束関連
+    integer, parameter :: PARTITION = 20 
+    double precision, parameter :: LAYER = (ofst_U_Pt_Z - STDIST_Pt) / PARTITION
 
     ! record用
     integer, parameter :: DAT_RANDOM1 = 1
@@ -132,5 +155,6 @@ module parameters
     integer, parameter :: DAT_TEMP_INTERFACE = 14
     integer, parameter :: DAT_ENERGY = 15
     integer, parameter :: DAT_TEMP_PHANTOM = 16
+    integer, parameter :: DAT_TEMP_DISTRIBUTION = 17
 
 end module parameters

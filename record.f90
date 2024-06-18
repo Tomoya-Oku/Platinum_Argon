@@ -58,8 +58,20 @@ subroutine record_energy
     write(DAT_TEMP, '(3E15.7)') temp(U_PT), temp(L_PT), temp(AR)
     write(DAT_TEMP_INTERFACE, '(2E15.7)') temp_interface(U_PT), temp_interface(L_PT)
     write(DAT_TEMP_PHANTOM, '(2E15.7)') temp_phantom(U_PT), temp_phantom(L_PT)
-
 end subroutine record_energy
+
+subroutine record_tempDistribution
+    use variables
+    use parameters
+    implicit none
+    integer :: i
+    
+    call calc_tempDistribution
+    
+    do i = 1, PARTITION
+        write(DAT_TEMP_DISTRIBUTION, '(E15.7)') temp_layer(i)
+    end do
+end subroutine record_tempDistribution
 
 subroutine record_finposvel
     use variables

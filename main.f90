@@ -25,6 +25,9 @@ program main
     open(DAT_TEMP_INTERFACE, file='Data/temp_interface.dat')
     ! Phantom層温度
     open(DAT_TEMP_PHANTOM, file='Data/temp_phantom.dat')
+    
+    ! 温度分布
+    open(DAT_TEMP_DISTRIBUTION, file='Data/temp_layer.dat')
 
     ! ログ
     open(DAT_LOG, file='Data/log.dat')
@@ -34,12 +37,28 @@ program main
     call boundary ! 境界条件
     call record_posvel
     call record_energy
+    call record_tempDistribution
 
     write(6,*) "MAXSTEP, NVTSTEP, DT", MAXSTEP, NVTSTEP, DT
+    write(6,*) "SYSTEM SIZE (x, y, z)", SSIZE(x), SSIZE(y), SSIZE(z)
     write(6,*) "Upper Pt: ", N_uP
     write(6,*) "Lower Pt: ", N_lP
     write(6,*) "Ar: ", N_Ar
     write(6,*) "STDIST_Pt, STDIST_Ar", STDIST_Pt, STDIST_Ar
+
+    write(6,*) "LAYER", LAYER
+
+    ! write(6,*) "OFST(U_PT, X)", OFST(U_PT, X)
+    ! write(6,*) "OFST(U_PT, Y)", OFST(U_PT, Y)
+    ! write(6,*) "OFST(U_PT, Z)", OFST(U_PT, Z)
+
+    ! write(6,*) "OFST(L_PT, X)", OFST(L_PT, X)
+    ! write(6,*) "OFST(L_PT, Y)", OFST(L_PT, Y)
+    ! write(6,*) "OFST(L_PT, Z)", OFST(L_PT, Z)
+
+    ! write(6,*) "OFST(AR, X)", OFST(AR, X)
+    ! write(6,*) "OFST(AR, Y)", OFST(AR, Y)
+    ! write(6,*) "OFST(AR, Z)", OFST(AR, Z)
 
     do i = 1, MAXSTEP
         nowstp = i
@@ -62,6 +81,7 @@ program main
         if(mod(nowstp, 100) == 1) then
             call record_posvel
             call record_energy
+            call record_tempDistribution
         endif
     end do
 

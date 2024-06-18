@@ -33,8 +33,8 @@ subroutine integral
             w(Y) = sqrt(-2.0D0 * log(rand(1))) * sin(2.0D0 * PI * rand(2))
             w(Z) = sqrt(-2.0D0 * log(rand(3))) * cos(2.0D0 * PI * rand(4))
 
-            F_f(:) = -MASS(kind) * vel(kind, i, :) / DAMPER(kind)
-            F_r(:) = dsqrt(2.0D0 * BOLTZMANN * 1.0D16 * ATEMP(kind) * MASS(kind) / DT / DAMPER(kind)) * w(:)
+            F_f(:) = DAMPCOEF(kind) * vel(kind, i, :)
+            F_r(:) = RANDCOEF(kind) * w(:)
 
             acc(kind, i, :) = acc(kind, i, :) + (F_f(:) + F_r(:)) / MASS(kind)
             vel(kind, i, :) = vel(kind, i, :) + acc(kind, i, :)*DT

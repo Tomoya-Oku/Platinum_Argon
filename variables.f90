@@ -32,6 +32,10 @@ module variables
     double precision :: kin_phantom(2, xyz_uP(X)*xyz_uP(Y))
     double precision :: kin_phantom_sum(2)
 
+    ! 温度分布関連
+    double precision :: kin_layer(PARTITION)
+    double precision :: temp_layer(PARTITION)
+
     ! 分子の種類
     ! total_enegy, total_potential, total_kinetic
     double precision :: energy(4, 3)

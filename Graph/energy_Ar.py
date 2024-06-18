@@ -3,10 +3,10 @@ from matplotlib.ticker import ScalarFormatter
 import pandas as pd
 import numpy as np
 
-maxstep = 20000
+maxstep = 40000
 
 def main():
-    input_dat = pd.read_table("Data/energy.dat",header=None, delim_whitespace=True)
+    input_dat = pd.read_table("energy_Ar.dat",header=None, delim_whitespace=True)
 
     time = np.arange(0, maxstep+1, 100)
     tote = input_dat[input_dat.keys()[0]]
@@ -16,7 +16,7 @@ def main():
     plt.xlabel("Time[fs]")
     plt.ylabel("Energy[J]")
     plt.xlim(0, len(time)*100)
-    #plt.ylim(-8e-16, -7e-16)
+    plt.ylim(-3e-17, 1e-17)
     plt.gca().yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
     
     plt.grid(linestyle="dotted")
