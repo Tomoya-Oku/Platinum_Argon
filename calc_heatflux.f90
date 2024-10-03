@@ -1,38 +1,46 @@
-subroutine calc_tempDistribution
+subroutine calc_heatflux
     use variables
     use parameters
+    use functions
     implicit none
-    integer :: i, j, count = 0
-    double precision :: z_min, z_max, vel2_sum = 0.0D0
 
-    do i = 1, PARTITION
-        z_max = STDIST_Pt + LAYER * PARTITION - (i-1) * LAYER
-        z_min = STDIST_Pt + LAYER * PARTITION - (i-1) * LAYER - LAYER
+    integer :: i, j, kind
+    double precision :: Fv(2) = 0.0D0, F_Dv(2) = 0.0D0, F_Rv(2) = 0.0D0
 
-        ! write(6,*) "z_max, z_min", z_max, z_min
+    do j = 1, N(AR)
+        do kind = U_PT, L_PT
+            do i = INTERFACE_START(kind), INTERFACE_END(kind)
+                Fv(kind) = Fv(kind) + DOT_PRODUCT(for(kind, AR, i, j, :), velene(kind, i, :))
+            end do
 
-        ! 指定層にある粒子について速度の2乗和を計算
-        do j = 1, N(AR)
-            if ((z_min <= pos(AR, j, Z)) .and. (pos(AR, j, Z) < z_max)) then
-                vel2_sum = vel2_sum + sum(vel(AR, j, :)*vel(AR, j, :))
-                count = count + 1
-            end if
+            ! do i = 1, N(kind)
+            !     if (isInterface(kind, i)) then
+            !         Fv(kind) = Fv(kind) + DOT_PRODUCT(for(kind, AR, i, j, :), velene(kind, i, :))
+            !     end if
+            ! end do
+        end do
+    end do
+
+    do kind = U_PT, L_PT
+        do i = PHANTOM_START(kind), PHANTOM_END(kind)
+            F_Dv(kind) = F_Dv(kind) + DOT_PRODUCT(F_D(kind, i, :), velene(kind, i, :))
+            F_Rv(kind) = F_Rv(kind) + DOT_PRODUCT(F_R(kind, i, :), velene(kind, i, :))
         end do
 
-        ! 指定層にある粒子について運動エネルギーを計算+有次元化
-        kin_layer(i) = 0.500D0 * MASS(AR) * vel2_sum / 1.00D16
-
-        ! 指定層にある粒子について温度を計算
-        temp_layer(i) = 2.0D0 * kin_layer(i) / (3.0D0 * count * BOLTZMANN)
-        count = 0
-        vel2_sum = 0.0D0
+        ! do i = 1, N(kind)
+        !     if (isPhantom(kind, i)) then
+        !         F_Dv(kind) = F_Dv(kind) + DOT_PRODUCT(F_D(kind, i, :), velene(kind, i, :))
+        !         F_Rv(kind) = F_Rv(kind) + DOT_PRODUCT(F_R(kind, i, :), velene(kind, i, :))
+        !     end if
+        ! end do
     end do
-end subroutine calc_tempDistribution
 
-! subroutine calc_heatflux
-!     use variables, only: nowstp
-!     use parameters
-!     implicit none
+    ! interface
+    heatflux_interface(:) = Fv(:) / A
+    Q_interface(:) = Q_interface(:) + heatflux_interface(:) * DT * 1.0D-4 ! 有次元化[J/m^2]
 
+    ! phantom
+    heatflux_phantom(:) = (F_Dv(:) + F_Rv(:)) / A
+    Q_phantom(:) = Q_phantom(:) + heatflux_phantom(:) * DT  * 1.0D-4 ! 有次元化[J/m^2]
 
-! end subroutine calc_heatflux
+end subroutine calc_heatflux

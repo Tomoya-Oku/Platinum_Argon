@@ -11,7 +11,7 @@ subroutine boundary
                     pos(kind, i, j) = pos(kind, i, j) + SSIZE(j)
                 else if(pos(kind, i, j) > SSIZE(j)) then
                     pos(kind, i, j) = pos(kind, i, j) - SSIZE(j)
-                endif
+                end if
             end do
         end do
     end do

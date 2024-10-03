@@ -1,8 +1,9 @@
 subroutine calc_kinetic
     use variables
     use parameters
+    use functions
     implicit none
-    integer :: i, kind, j = 1, k = 1
+    integer :: i, kind, l = 1
     double precision :: vel2
 
     ! 初期化
@@ -11,29 +12,45 @@ subroutine calc_kinetic
     ! 運動エネルギー計算
     do kind = 1, 3
         do i = 1, N(kind)
-            vel2 = vel(kind, i, 1)*vel(kind, i, 1) + vel(kind, i, 2)*vel(kind, i, 2) + vel(kind, i, 3)*vel(kind, i, 3)
+            vel2 = sum(velene(kind, i, :)*velene(kind, i, :))
             kin(kind, i) = 0.500D0 * MASS(kind) * vel2
 
-            ! 界面のみ
-            if (kind == U_PT .and. i <= xyz(U_PT, X)*xyz(U_PT, Y)) then
-                kin_interface(U_PT, j) = kin(U_PT, i)
-                j = j + 1
-            else if (kind == L_PT .and. i > xyz(L_PT, X)*xyz(L_PT, Y)*(xyz(L_PT, Z)-1)) then
-                kin_interface(L_PT, j) = kin(L_PT, i)
-                j = j + 1
-            end if
-
-            ! Phantom面のみ
-            if (kind == U_PT .and. xyz(U_PT, X)*xyz(U_PT, Y)+1 <= i .and. i <= xyz(U_PT, X)*xyz(U_PT, Y)*(xyz(U_PT, z)-1)) then
-                kin_phantom(U_PT, k) = kin(U_PT, i)
-                k = k + 1
-            else if (kind == L_PT .and. xyz(L_PT, X)*xyz(L_PT, Y)+1 <= i .and. i <= xyz(L_PT, X)*xyz(L_PT, Y)*(xyz(L_PT, z)-1)) then
-                kin_phantom(L_PT, k) = kin(L_PT, i)
-                k = k + 1
+            ! 上部Pt
+            if (kind == U_PT) then
+                ! 界面
+                if (isInterface(U_PT, i)) then
+                    do l = 1, INTERFACE_LAYER
+                        if (N_LAYER*(l-1)+1 <= i .and. i <= N_LAYER*(l)) then
+                            kin_interface_sum(U_PT, l) = kin_interface_sum(U_PT, l) + kin(U_PT, i)
+                        end if
+                    end do
+                ! Phantom層
+                else if (isPhantom(U_PT, i)) then
+                    do l = 1, PHANTOM_LAYER
+                        if (N_LAYER*(INTERFACE_LAYER+l-1)+1 <= i .and. i <= N_LAYER*(INTERFACE_LAYER+l)) then
+                            kin_phantom_sum(U_PT, l) = kin_phantom_sum(U_PT, l) + kin(U_PT, i)
+                        end if
+                    end do
+                end if
+            ! 下部Pt
+            else if (kind == L_PT) then
+                ! 界面
+                if (isInterface(L_PT, i)) then
+                    do l = 1, INTERFACE_LAYER
+                        if (N_LAYER*(PHANTOM_LAYER+l)+1 <= i .and. i <= N_LAYER*(PHANTOM_LAYER+l+1)) then
+                            kin_interface_sum(L_PT, l) = kin_interface_sum(L_PT, l) + kin(L_PT, i)
+                        end if
+                    end do
+                ! Phantom層
+                else if (isPhantom(L_PT, i)) then
+                    do l = 1, PHANTOM_LAYER
+                        if ((N_LAYER*l)+1 <= i .and. i <= N_LAYER*(l+1)) then
+                            kin_phantom_sum(L_PT, l) = kin_phantom_sum(L_PT, l) + kin(L_PT, i)
+                        end if
+                    end do
+                end if
             end if
         end do
-        j = 1
-        k = 1
     end do
 
 end subroutine calc_kinetic
